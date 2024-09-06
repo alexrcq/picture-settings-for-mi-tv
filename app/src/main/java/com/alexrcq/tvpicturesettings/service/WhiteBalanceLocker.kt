@@ -18,17 +18,18 @@ import com.alexrcq.tvpicturesettings.TvSettingsRepository
 import com.alexrcq.tvpicturesettings.storage.MtkGlobalKeys
 import com.alexrcq.tvpicturesettings.storage.PicturePreferences
 
-class WhiteBalanceFixerService : Service() {
+private const val DEFAULT_COLOR_GAIN = 1024
+
+class WhiteBalanceLocker : Service() {
 
     private lateinit var tvSettingsRepository: TvSettingsRepository
     private lateinit var preferences: PicturePreferences
 
     private val globalSettingsObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
         override fun onChange(selfChange: Boolean, uri: Uri?) {
-            when (uri?.lastPathSegment) {
-                MtkGlobalKeys.PICTURE_RED_GAIN, MtkGlobalKeys.PICTURE_GREEN_GAIN, MtkGlobalKeys.PICTURE_BLUE_GAIN -> {
-                    restorePictureGainIfFixed()
-                }
+            val key = uri?.lastPathSegment
+            if (key != null) {
+                onGlobalSettingChanged(key)
             }
         }
     }
@@ -38,8 +39,11 @@ class WhiteBalanceFixerService : Service() {
         val application = application as App
         tvSettingsRepository = application.tvSettingsRepository
         preferences = application.picturePreferences
-        restorePictureGainIfFixed()
-        tvSettingsRepository.getGlobalSettings().registerContentObserver(globalSettingsObserver)
+        if (preferences.isWhiteBalanceLocked) {
+            startLocking()
+        } else {
+            stopSelf()
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -51,7 +55,32 @@ class WhiteBalanceFixerService : Service() {
     override fun onBind(intent: Intent): IBinder? = null
 
     override fun onDestroy() {
+        stopLocking()
+    }
+
+    private fun startLocking() {
+        tvSettingsRepository.getPictureSettings().setWhiteBalance(
+            redGain = preferences.redGain,
+            greenGain = preferences.greenGain,
+            blueGain = preferences.blueGain
+        )
+        tvSettingsRepository.getGlobalSettings().registerContentObserver(globalSettingsObserver)
+    }
+
+    private fun stopLocking() {
         tvSettingsRepository.getGlobalSettings().unregisterContentObserver(globalSettingsObserver)
+    }
+
+    private fun onGlobalSettingChanged(key: String) {
+        when (key) {
+            MtkGlobalKeys.PICTURE_RED_GAIN, MtkGlobalKeys.PICTURE_GREEN_GAIN, MtkGlobalKeys.PICTURE_BLUE_GAIN -> {
+                restorePreferredColorGain(key)
+            }
+        }
+    }
+
+    private fun restorePreferredColorGain(key: String) {
+        tvSettingsRepository.getGlobalSettings().putInt(key, preferences.get(key, DEFAULT_COLOR_GAIN))
     }
 
     private fun createNotificationChannel() {
@@ -70,22 +99,13 @@ class WhiteBalanceFixerService : Service() {
             .setSmallIcon(R.mipmap.ic_launcher)
             .build()
 
-    private fun restorePictureGainIfFixed() {
-        if (preferences.isWhiteBalanceFixed) {
-            tvSettingsRepository.getPictureSettings().setWhiteBalance(
-                redGain = preferences.redGain,
-                greenGain = preferences.greenGain,
-                blueGain = preferences.blueGain
-            )
-        }
-    }
-
     companion object : ServiceFactory() {
-        private const val NOTIFICATION_TITLE = "White Balance Fixer"
+        private const val NOTIFICATION_TITLE = "White Balance Locker"
         private const val NOTIFICATION_CONTENT = "Service is running"
 
         private const val NOTIFICATION_CHANNEL_ID = "channel_id"
-        private const val NOTIFICATION_CHANNEL_NAME = "White Balance Fixer"
-        override fun getIntent(context: Context): Intent = Intent(context, WhiteBalanceFixerService::class.java)
+        private const val NOTIFICATION_CHANNEL_NAME = "White Balance Locker"
+
+        override fun getIntent(context: Context): Intent = Intent(context, WhiteBalanceLocker::class.java)
     }
 }

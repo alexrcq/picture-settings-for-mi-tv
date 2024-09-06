@@ -13,7 +13,7 @@ object PreferencesKeys {
     const val TURN_OFF_DARK_MODE_ON_SCREEN_ON = "is_enable_day_mode_after_screen_on_enabled"
     const val OPEN_PICTURE_SETTINGS = "open_picture_settings"
     const val APP_DESCRIPTION = "app_description"
-    const val IS_WHITE_BALANCE_FIXED = "fix_wb_values"
+    const val IS_WHITE_BALANCE_LOCKED = "fix_wb_values"
     const val RED_GAIN = "picture_red_gain"
     const val GREEN_GAIN = "picture_green_gain"
     const val BLUE_GAIN = "picture_blue_gain"

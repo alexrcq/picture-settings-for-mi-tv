@@ -5,7 +5,7 @@ import android.content.SharedPreferences
 private const val DEFAULT_COLOR_GAIN = 1024
 
 class PicturePreferences(sharedPreferences: SharedPreferences) : SharedPreferencesStore(sharedPreferences) {
-    var isWhiteBalanceFixed: Boolean by preference(PreferencesKeys.IS_WHITE_BALANCE_FIXED, false)
+    var isWhiteBalanceLocked: Boolean by preference(PreferencesKeys.IS_WHITE_BALANCE_LOCKED, false)
     var showAboutVideoPrefsRuLocalization: Boolean by preference(
         PreferencesKeys.SHOW_ABOUT_VIDEO_PREFS_RU_LOCALIZATION,
         true

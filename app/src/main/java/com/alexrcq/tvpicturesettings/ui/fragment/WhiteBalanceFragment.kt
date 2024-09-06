@@ -7,7 +7,7 @@ import androidx.preference.forEach
 import com.alexrcq.tvpicturesettings.App
 import com.alexrcq.tvpicturesettings.storage.PreferencesKeys
 import com.alexrcq.tvpicturesettings.R
-import com.alexrcq.tvpicturesettings.service.WhiteBalanceFixerService
+import com.alexrcq.tvpicturesettings.service.WhiteBalanceLocker
 import com.alexrcq.tvpicturesettings.storage.PicturePreferences
 import com.alexrcq.tvpicturesettings.storage.TvSettings
 import com.alexrcq.tvpicturesettings.util.onClick
@@ -25,33 +25,33 @@ class WhiteBalanceFragment : GlobalSettingsFragment(R.xml.white_balance_prefs) {
         findPreference<Preference>(PreferencesKeys.RESET_VALUES)?.onClick {
             pictureSettings.resetWhiteBalance()
         }
-        if (picturePreferences.isWhiteBalanceFixed) {
+        if (picturePreferences.isWhiteBalanceLocked) {
             setWhiteBalancePrefsEnabled(false)
-            scrollToPreference(PreferencesKeys.IS_WHITE_BALANCE_FIXED)
+            scrollToPreference(PreferencesKeys.IS_WHITE_BALANCE_LOCKED)
         }
     }
 
     override fun onPreferenceChange(preference: Preference, newValue: Any): Boolean {
-        if (preference.key == PreferencesKeys.IS_WHITE_BALANCE_FIXED) {
-            val isWhiteBalanceFixed = newValue as Boolean
-            setWhiteBalancePrefsEnabled(!isWhiteBalanceFixed)
-            if (isWhiteBalanceFixed) {
-                WhiteBalanceFixerService.startForeground(requireContext())
+        if (preference.key == PreferencesKeys.IS_WHITE_BALANCE_LOCKED) {
+            val isWhiteBalanceLocked = newValue as Boolean
+            setWhiteBalancePrefsEnabled(!isWhiteBalanceLocked)
+            if (isWhiteBalanceLocked) {
+                WhiteBalanceLocker.startForeground(requireContext())
             } else {
-                WhiteBalanceFixerService.stop(requireContext())
+                WhiteBalanceLocker.stop(requireContext())
             }
         }
         return super.onPreferenceChange(preference, newValue)
     }
 
     override fun updatePreference(preference: Preference) {
-        if (picturePreferences.isWhiteBalanceFixed) return
+        if (picturePreferences.isWhiteBalanceLocked) return
         super.updatePreference(preference)
     }
 
     private fun setWhiteBalancePrefsEnabled(isEnabled: Boolean) {
         preferenceScreen.forEach { preference ->
-            if (preference.key != PreferencesKeys.IS_WHITE_BALANCE_FIXED) {
+            if (preference.key != PreferencesKeys.IS_WHITE_BALANCE_LOCKED) {
                 preference.isEnabled = isEnabled
             }
         }
