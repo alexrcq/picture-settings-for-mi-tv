@@ -57,7 +57,7 @@
     <string name="white_balance_hint">The default value is 1024</string>
     <string name="reset_to_default_1024">Reset to default</string>
     <string name="hold_to_toggle_extra_dimm_hint">Press and hold to toggle the additional dimming</string>
-    <string name="fix_values">Fix the values above</string>
+    <string name="fix_values">Lock the values</string>
     <string name="custom_see_wb_settings">Custom (see the white balance settings)</string>
     <string name="fixed_see_wb_settings">Fixed (see the white balance settings)</string>
     <string name="activity_not_found">%1$s not found</string>
@@ -67,4 +67,5 @@
     <string name="mode_cannot_be_applied">Backlight mode cannot be applied due to current system configuration</string>
     <string name="grant_permissions">Grant permissions</string>
     <string name="permissions_granted">Permissions granted</string>
+    <string name="fix_values_summary">Prohibit the system from changing the white balance</string>
 </resources>

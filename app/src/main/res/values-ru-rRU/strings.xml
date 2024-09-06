@@ -57,7 +57,7 @@
     <string name="white_balance_hint">Стандартное значение – 1024</string>
     <string name="reset_to_default_1024">Сбросить значения до стандартного</string>
     <string name="hold_to_toggle_extra_dimm_hint">Удерживайте для переключения доп. затемнения</string>
-    <string name="fix_values">Фиксировать значения</string>
+    <string name="fix_values">Зафиксировать значения</string>
     <string name="custom_see_wb_settings">Пользовательская (см. настройки баланса белого)</string>
     <string name="fixed_see_wb_settings">Фиксированная (см. настройки баланса белого)</string>
     <string name="activity_not_found">%1$s не найдена</string>
@@ -67,4 +67,5 @@
     <string name="mode_cannot_be_applied">Режим подсветки не может быть применён при текущей конфигурации системы</string>
     <string name="grant_permissions">Выдать разрешения</string>
     <string name="permissions_granted">Разрешения выданы</string>
+    <string name="fix_values_summary">Запретить системе изменять баланс белого</string>
 </resources>

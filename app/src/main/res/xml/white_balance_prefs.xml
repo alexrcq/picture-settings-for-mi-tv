@@ -16,7 +16,8 @@
     <SwitchPreference
         android:defaultValue="false"
         android:key="fix_wb_values"
-        android:title="@string/fix_values" />
+        android:title="@string/fix_values"
+        android:summary="@string/fix_values_summary"/>
     <Preference
         android:key="reset_values"
         android:title="@string/reset_to_default_1024"/>

@@ -34,7 +34,7 @@
             android:enabled="true"
             android:exported="false" />
         <service
-            android:name=".service.WhiteBalanceFixerService"
+            android:name=".service.WhiteBalanceLocker"
             android:enabled="true"
             android:exported="false" />
         <service

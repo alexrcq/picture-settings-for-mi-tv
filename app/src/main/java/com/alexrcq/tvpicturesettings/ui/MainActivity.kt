@@ -5,8 +5,10 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.fragment.app.FragmentActivity
+import com.alexrcq.tvpicturesettings.App
 import com.alexrcq.tvpicturesettings.R
 import com.alexrcq.tvpicturesettings.service.DarkModeManager
+import com.alexrcq.tvpicturesettings.service.WhiteBalanceLocker
 import com.alexrcq.tvpicturesettings.util.TvUtils
 
 class MainActivity : FragmentActivity() {
@@ -18,7 +20,7 @@ class MainActivity : FragmentActivity() {
             return
         }
         setContentView(R.layout.activity_main)
-        DarkModeManager.startForeground(this)
+        startServices()
     }
 
     override fun onAttachedToWindow() {
@@ -41,5 +43,13 @@ class MainActivity : FragmentActivity() {
             .create()
         dialog.show()
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).requestFocus()
+    }
+
+    private fun startServices() {
+        DarkModeManager.startForeground(this)
+        val isWhiteBalanceLocked = (application as App).picturePreferences.isWhiteBalanceLocked
+        if (isWhiteBalanceLocked) {
+            WhiteBalanceLocker.startForeground(this)
+        }
     }
 }

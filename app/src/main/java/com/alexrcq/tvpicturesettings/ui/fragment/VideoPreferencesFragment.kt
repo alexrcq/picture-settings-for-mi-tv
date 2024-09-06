@@ -28,11 +28,11 @@ class VideoPreferencesFragment : GlobalSettingsFragment(R.xml.video_prefs) {
         findPreference<Preference>(PreferencesKeys.RESET_TO_DEFAULT)?.onClick {
             showResetToDefaultDialog()
         }
-        val isWhiteBalanceFixed = (requireActivity().application as App).picturePreferences.isWhiteBalanceFixed
+        val isWhiteBalanceLocked = (requireActivity().application as App).picturePreferences.isWhiteBalanceLocked
         findPreference<ListPreference>(MtkGlobalKeys.PICTURE_TEMPERATURE)?.apply {
-            isEnabled = !isWhiteBalanceFixed
+            isEnabled = !isWhiteBalanceLocked
             summaryProvider = SummaryProvider<ListPreference> { preference ->
-                if (isWhiteBalanceFixed) {
+                if (isWhiteBalanceLocked) {
                     getString(R.string.fixed_see_wb_settings)
                 } else if (preference.entry.isNullOrEmpty()) {
                     getString(R.string.custom_see_wb_settings)
