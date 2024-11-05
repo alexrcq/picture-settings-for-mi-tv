@@ -122,7 +122,6 @@ class DarkModeManager : Service(), SharedPreferences.OnSharedPreferenceChangeLis
                 val mode = DarkModeManager.Mode.valueOf(modeName)
                 if (tvSettings.picture.isBacklightAdjustAllowed()) {
                     applyMode(mode)
-                    showToast(getString(mode.message))
                 } else {
                     showToast(getString(R.string.mode_cannot_be_applied))
                 }
@@ -156,6 +155,13 @@ class DarkModeManager : Service(), SharedPreferences.OnSharedPreferenceChangeLis
                 tvSettings.picture.backlight = preferences.nightBacklight
                 preferences.isScreenFilterEnabled = true
             }
+        }
+        onModeChanged(mode)
+    }
+
+    private fun onModeChanged(mode: Mode) {
+        if (preferences.showModeChanged) {
+            showToast(getString(mode.message))
         }
     }
 
