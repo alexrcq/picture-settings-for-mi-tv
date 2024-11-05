@@ -53,7 +53,7 @@ class MainFragment : GlobalSettingsFragment(R.xml.picture_prefs) {
                 DarkModeHintProvider(darkModePreferences),
                 adbClient,
                 CaptureScreenUseCase(adbClient),
-                tvSettingsRepository
+                tvSettings
             )
         }
     }
@@ -114,7 +114,8 @@ class MainFragment : GlobalSettingsFragment(R.xml.picture_prefs) {
             listOf(
                 android.Manifest.permission.WRITE_SECURE_SETTINGS,
                 android.Manifest.permission.READ_EXTERNAL_STORAGE,
-                android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+                android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                android.Manifest.permission.SYSTEM_ALERT_WINDOW
             )
         )
     }

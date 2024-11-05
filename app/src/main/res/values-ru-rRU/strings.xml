@@ -49,7 +49,6 @@
     <string name="dark_mode_disable_time">Время выхода из ночного режима</string>
     <string name="reset_values">Сбросить значения</string>
     <string name="screen_capture_error_try_again">Ошибка захвата изображения. Пожалуйста, попробуйте снова</string>
-    <string name="screen_filter_service">Сервис экранного фильтра</string>
     <string name="open_picture_settings">Открыть настройки изображения</string>
     <string name="white_balance">Баланс белого</string>
     <string name="app_description">Версия приложения: %1$s</string>
@@ -68,4 +67,5 @@
     <string name="grant_permissions">Выдать разрешения</string>
     <string name="permissions_granted">Разрешения выданы</string>
     <string name="fix_values_summary">Запретить системе изменять баланс белого</string>
+    <string name="show_mode_changed">Показывать сообщение о смене режима</string>
 </resources>

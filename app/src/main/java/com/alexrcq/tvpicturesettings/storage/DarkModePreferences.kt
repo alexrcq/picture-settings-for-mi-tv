@@ -23,6 +23,7 @@ class DarkModePreferences(sharedPreferences: SharedPreferences) : SharedPreferen
             put(PreferencesKeys.STEP_BY_STEP_DARK_MODE_ENABLED, enabled)
             modeToggleStrategy = if (enabled) threeStepsDarkMode else twoStepsDarkMode
         }
+    var showModeChanged: Boolean by preference(PreferencesKeys.SHOW_MODE_CHANGED, true)
 
     private val twoStepsDarkMode = object : ModeToggleStrategy {
         override fun toggleMode() {
