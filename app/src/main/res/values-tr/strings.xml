@@ -53,7 +53,6 @@
     <string name="dark_mode_disable_time">Karanlık mod bitiş zamanı</string>
     <string name="reset_values">Varsayılana sıfırla</string>
     <string name="screen_capture_error_try_again">Ekran görüntüsü alınamadı. Tekrar deneyin</string>
-    <string name="screen_filter_service">Ekran filtresi</string>
     <string name="open_picture_settings">Resim ayarlarını aç</string>
     <string name="white_balance">Beyaz dengesi</string>
     <string name="app_description">Versiyon: %1s</string>

@@ -14,19 +14,20 @@ import androidx.annotation.StringRes
 import androidx.core.app.NotificationCompat
 import com.alexrcq.tvpicturesettings.App
 import com.alexrcq.tvpicturesettings.R
-import com.alexrcq.tvpicturesettings.TvSettingsRepository
 import com.alexrcq.tvpicturesettings.storage.DarkModePreferences
+import com.alexrcq.tvpicturesettings.storage.PictureSettings
 import com.alexrcq.tvpicturesettings.storage.PreferencesKeys
 import com.alexrcq.tvpicturesettings.storage.TvSettings
+import com.alexrcq.tvpicturesettings.ui.view.ScreenFilter
 import com.alexrcq.tvpicturesettings.util.AlarmScheduler
-import com.alexrcq.tvpicturesettings.util.ServiceUtils
 import com.alexrcq.tvpicturesettings.util.showToast
 import timber.log.Timber
 
 class DarkModeManager : Service(), SharedPreferences.OnSharedPreferenceChangeListener {
 
     private lateinit var preferences: DarkModePreferences
-    private lateinit var tvSettingsRepository: TvSettingsRepository
+    private lateinit var tvSettings: TvSettings
+    private lateinit var screenFilter: ScreenFilter
 
     private val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -38,28 +39,12 @@ class DarkModeManager : Service(), SharedPreferences.OnSharedPreferenceChangeLis
     override fun onCreate() {
         super.onCreate()
         val application = application as App
-        tvSettingsRepository = application.tvSettingsRepository
+        tvSettings = application.tvSettings
         preferences = application.darkModePreferences
-        preferences.registerOnSharedPreferenceChangeListener(this)
-        if (preferences.dayBacklight !in 0..TvSettings.Picture.MAX_BACKLIGHT) {
-            preferences.dayBacklight = tvSettingsRepository.getPictureSettings().backlight
-        }
-        if (preferences.isAutoDarkModeEnabled) {
-            AlarmScheduler.setDailyAlarm(this, AlarmScheduler.AlarmType.DAY_MODE_ALARM, preferences.dayModeTime)
-            AlarmScheduler.setDailyAlarm(this, AlarmScheduler.AlarmType.DARK_MODE_ALARM, preferences.darkModeTime)
-        }
-        val intentFilter = IntentFilter().apply {
-            addAction(ACTION_TOGGLE_DARK_MODE)
-            addAction(ACTION_ENABLE_DARK_MODE)
-            addAction(ACTION_DISABLE_DARK_MODE)
-            addAction(ACTION_TOGGLE_FILTER)
-            addAction(ACTION_ENABLE_FILTER)
-            addAction(ACTION_DISABLE_FILTER)
-            addAction(ACTION_CHANGE_FILTER_POWER)
-            addAction(ACTION_TOGGLE_SCREEN_POWER)
-            addAction(Intent.ACTION_SCREEN_ON)
-        }
-        registerReceiver(broadcastReceiver, intentFilter)
+        initScreenFilter()
+        setupPreferences()
+        setupDarkModeAlarms()
+        registerReceiver()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -94,12 +79,48 @@ class DarkModeManager : Service(), SharedPreferences.OnSharedPreferenceChangeLis
             .setSmallIcon(R.mipmap.ic_launcher)
             .build()
 
+    private fun initScreenFilter() {
+        screenFilter = ScreenFilter(this).apply {
+            isEnabled = preferences.isScreenFilterEnabled
+            setPower(preferences.screenFilterPower)
+        }
+    }
+
+    private fun setupPreferences() {
+        preferences.registerOnSharedPreferenceChangeListener(this)
+        if (preferences.dayBacklight !in 0..PictureSettings.MAX_BACKLIGHT) {
+            preferences.dayBacklight = tvSettings.picture.backlight
+        }
+    }
+
+    private fun setupDarkModeAlarms() {
+        if (preferences.isAutoDarkModeEnabled) {
+            AlarmScheduler.setDailyAlarm(this, AlarmScheduler.AlarmType.DAY_MODE_ALARM, preferences.dayModeTime)
+            AlarmScheduler.setDailyAlarm(this, AlarmScheduler.AlarmType.DARK_MODE_ALARM, preferences.darkModeTime)
+        }
+    }
+
+    private fun registerReceiver() {
+        val intentFilter = IntentFilter().apply {
+            addAction(ACTION_TOGGLE_DARK_MODE)
+            addAction(ACTION_ENABLE_DARK_MODE)
+            addAction(ACTION_DISABLE_DARK_MODE)
+            addAction(ACTION_TOGGLE_FILTER)
+            addAction(ACTION_ENABLE_FILTER)
+            addAction(ACTION_DISABLE_FILTER)
+            addAction(ACTION_CHANGE_FILTER_POWER)
+            addAction(ACTION_TOGGLE_SCREEN_POWER)
+            addAction(Intent.ACTION_SCREEN_ON)
+        }
+        registerReceiver(broadcastReceiver, intentFilter)
+    }
+
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String) {
         when (key) {
             PreferencesKeys.CURRENT_MODE_NAME -> {
                 val modeName = sharedPreferences.getString(PreferencesKeys.CURRENT_MODE_NAME, Mode.OFF.name)!!
                 val mode = DarkModeManager.Mode.valueOf(modeName)
-                if (tvSettingsRepository.isBacklightAdjustAllowed()) {
+                if (tvSettings.picture.isBacklightAdjustAllowed()) {
                     applyMode(mode)
                     showToast(getString(mode.message))
                 } else {
@@ -107,19 +128,15 @@ class DarkModeManager : Service(), SharedPreferences.OnSharedPreferenceChangeLis
                 }
             }
             PreferencesKeys.IS_SCREEN_FILTER_ENABLED -> {
-                ensureScreenFilterServiceRunning()
-                val enabled = sharedPreferences.getBoolean(PreferencesKeys.IS_SCREEN_FILTER_ENABLED, false)
-                ScreenFilterService.sharedInstance?.screenFilter?.setEnabled(enabled)
+                screenFilter.isEnabled = sharedPreferences.getBoolean(PreferencesKeys.IS_SCREEN_FILTER_ENABLED, false)
             }
             PreferencesKeys.SCREEN_FILTER_POWER -> {
-                ensureScreenFilterServiceRunning()
-                val power = sharedPreferences.getInt(PreferencesKeys.SCREEN_FILTER_POWER, 0)
-                ScreenFilterService.sharedInstance?.screenFilter?.setPower(power)
+                screenFilter.setPower(sharedPreferences.getInt(PreferencesKeys.SCREEN_FILTER_POWER, 0))
             }
             PreferencesKeys.NIGHT_BACKLIGHT -> {
-                if (preferences.currentMode != Mode.OFF && tvSettingsRepository.isBacklightAdjustAllowed()) {
+                if (preferences.currentMode != Mode.OFF && tvSettings.picture.isBacklightAdjustAllowed()) {
                     val nightBacklight = sharedPreferences.getInt(PreferencesKeys.NIGHT_BACKLIGHT, 0)
-                    tvSettingsRepository.getPictureSettings().backlight = nightBacklight
+                    tvSettings.picture.backlight = nightBacklight
                 }
             }
         }
@@ -128,15 +145,15 @@ class DarkModeManager : Service(), SharedPreferences.OnSharedPreferenceChangeLis
     private fun applyMode(mode: Mode) {
         when (mode) {
             Mode.OFF -> {
-                tvSettingsRepository.getPictureSettings().backlight = preferences.dayBacklight
+                tvSettings.picture.backlight = preferences.dayBacklight
                 preferences.isScreenFilterEnabled = false
             }
             Mode.ONLY_BACKLIGHT -> {
-                tvSettingsRepository.getPictureSettings().backlight = preferences.nightBacklight
+                tvSettings.picture.backlight = preferences.nightBacklight
                 preferences.isScreenFilterEnabled = false
             }
             Mode.FULL -> {
-                tvSettingsRepository.getPictureSettings().backlight = preferences.nightBacklight
+                tvSettings.picture.backlight = preferences.nightBacklight
                 preferences.isScreenFilterEnabled = true
             }
         }
@@ -160,14 +177,8 @@ class DarkModeManager : Service(), SharedPreferences.OnSharedPreferenceChangeLis
             ACTION_ENABLE_FILTER -> isScreenFilterEnabled = true
             ACTION_DISABLE_FILTER -> isScreenFilterEnabled = false
             ACTION_CHANGE_FILTER_POWER -> screenFilterPower = intent.getIntExtra(EXTRA_FILTER_POWER, 0)
-            ACTION_TOGGLE_SCREEN_POWER -> tvSettingsRepository.toggleScreenPower()
+            ACTION_TOGGLE_SCREEN_POWER -> tvSettings.toggleScreenPower()
             Intent.ACTION_SCREEN_ON -> onScreenOn()
-        }
-    }
-
-    private fun ensureScreenFilterServiceRunning() {
-        if (!ScreenFilterService.isServiceConnected()) {
-            ServiceUtils.ensureAccessibilityServiceEnabled(this, ScreenFilterService::class.java)
         }
     }
 

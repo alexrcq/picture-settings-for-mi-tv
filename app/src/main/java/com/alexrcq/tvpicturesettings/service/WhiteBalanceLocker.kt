@@ -14,15 +14,15 @@ import android.os.Looper
 import androidx.core.app.NotificationCompat
 import com.alexrcq.tvpicturesettings.App
 import com.alexrcq.tvpicturesettings.R
-import com.alexrcq.tvpicturesettings.TvSettingsRepository
 import com.alexrcq.tvpicturesettings.storage.MtkGlobalKeys
 import com.alexrcq.tvpicturesettings.storage.PicturePreferences
+import com.alexrcq.tvpicturesettings.storage.TvSettings
 
 private const val DEFAULT_COLOR_GAIN = 1024
 
 class WhiteBalanceLocker : Service() {
 
-    private lateinit var tvSettingsRepository: TvSettingsRepository
+    private lateinit var tvSettings: TvSettings
     private lateinit var preferences: PicturePreferences
 
     private val globalSettingsObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
@@ -37,7 +37,7 @@ class WhiteBalanceLocker : Service() {
     override fun onCreate() {
         super.onCreate()
         val application = application as App
-        tvSettingsRepository = application.tvSettingsRepository
+        tvSettings = application.tvSettings
         preferences = application.picturePreferences
         if (preferences.isWhiteBalanceLocked) {
             startLocking()
@@ -59,16 +59,16 @@ class WhiteBalanceLocker : Service() {
     }
 
     private fun startLocking() {
-        tvSettingsRepository.getPictureSettings().setWhiteBalance(
+        tvSettings.picture.setWhiteBalance(
             redGain = preferences.redGain,
             greenGain = preferences.greenGain,
             blueGain = preferences.blueGain
         )
-        tvSettingsRepository.getGlobalSettings().registerContentObserver(globalSettingsObserver)
+        tvSettings.global.registerContentObserver(globalSettingsObserver)
     }
 
     private fun stopLocking() {
-        tvSettingsRepository.getGlobalSettings().unregisterContentObserver(globalSettingsObserver)
+        tvSettings.global.unregisterContentObserver(globalSettingsObserver)
     }
 
     private fun onGlobalSettingChanged(key: String) {
@@ -80,7 +80,7 @@ class WhiteBalanceLocker : Service() {
     }
 
     private fun restorePreferredColorGain(key: String) {
-        tvSettingsRepository.getGlobalSettings().putInt(key, preferences.get(key, DEFAULT_COLOR_GAIN))
+        tvSettings.global.putInt(key, preferences.get(key, DEFAULT_COLOR_GAIN))
     }
 
     private fun createNotificationChannel() {

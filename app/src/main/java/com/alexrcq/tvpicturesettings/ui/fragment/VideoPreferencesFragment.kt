@@ -11,19 +11,19 @@ import androidx.preference.SwitchPreference
 import com.alexrcq.tvpicturesettings.App
 import com.alexrcq.tvpicturesettings.storage.PreferencesKeys
 import com.alexrcq.tvpicturesettings.R
-import com.alexrcq.tvpicturesettings.storage.TvSettings
 import com.alexrcq.tvpicturesettings.storage.MtkGlobalKeys
 import com.alexrcq.tvpicturesettings.storage.MtkPictureSettings.Companion.PICTURE_MODE_USER
+import com.alexrcq.tvpicturesettings.storage.PictureSettings
 import com.alexrcq.tvpicturesettings.util.onClick
 import com.alexrcq.tvpicturesettings.util.showToast
 
 class VideoPreferencesFragment : GlobalSettingsFragment(R.xml.video_prefs) {
 
-    private lateinit var pictureSettings: TvSettings.Picture
+    private lateinit var pictureSettings: PictureSettings
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        pictureSettings = (requireActivity().application as App).tvSettingsRepository.getPictureSettings()
+        pictureSettings = (requireActivity().application as App).tvSettings.picture
         handleLocaleSpecifics()
         findPreference<Preference>(PreferencesKeys.RESET_TO_DEFAULT)?.onClick {
             showResetToDefaultDialog()
@@ -46,9 +46,6 @@ class VideoPreferencesFragment : GlobalSettingsFragment(R.xml.video_prefs) {
     override fun onPreferenceChange(preference: Preference, newValue: Any): Boolean {
         super.onPreferenceChange(preference, newValue)
         when (preference.key) {
-            MtkGlobalKeys.PICTURE_MODE -> {
-                pictureSettings.setPictureTemperature(pictureMode = (newValue as String).toInt())
-            }
             MtkGlobalKeys.PICTURE_BRIGHTNESS,
             MtkGlobalKeys.PICTURE_CONTRAST,
             MtkGlobalKeys.PICTURE_SATURATION,

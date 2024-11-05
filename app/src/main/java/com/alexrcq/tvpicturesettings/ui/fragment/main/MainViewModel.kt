@@ -5,10 +5,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.alexrcq.tvpicturesettings.CaptureScreenUseCase
 import com.alexrcq.tvpicturesettings.R
-import com.alexrcq.tvpicturesettings.TvSettingsRepository
 import com.alexrcq.tvpicturesettings.adblib.AdbClient
 import com.alexrcq.tvpicturesettings.service.DarkModeManager
 import com.alexrcq.tvpicturesettings.storage.DarkModePreferences
+import com.alexrcq.tvpicturesettings.storage.TvSettings
 import com.alexrcq.tvpicturesettings.util.DarkModeHintProvider
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -33,7 +33,7 @@ class MainViewModel(
     private val darkModeHintProvider: DarkModeHintProvider,
     private val adbClient: AdbClient,
     private val captureScreen: CaptureScreenUseCase,
-    private val tvSettingsRepository: TvSettingsRepository
+    private val tvSettings: TvSettings,
 ) : ViewModel() {
 
     private val _uiStateFlow = MutableStateFlow<MainUiState>(MainUiState.Idle)
@@ -60,18 +60,18 @@ class MainViewModel(
 
     val darkModeHints: Flow<Int> = merge(clickToNextModeHintFlow, holdToToggleDimmingPeriodicHintFlow)
 
-    val isTvSourceInactiveFlow: SharedFlow<Boolean> =
-        tvSettingsRepository.isTvSourceInactiveFlow.shareIn(viewModelScope, SharingStarted.Eagerly, replay = 1)
+    val isTvSourceInactiveFlow: SharedFlow<Boolean> = tvSettings.tvSourceFlow().map { source -> source == null }
+        .shareIn(viewModelScope, SharingStarted.Eagerly, replay = 1)
 
-    val isAdbEnabled: Boolean get() = tvSettingsRepository.isAdbEnabled()
+    val isAdbEnabled: Boolean get() = tvSettings.isAdbEnabled()
 
-    val isBacklightAdjustAllowedFlow: SharedFlow<Boolean> = tvSettingsRepository.isBacklightAdjustAllowedStateFlow
+    val isBacklightAdjustAllowedFlow: SharedFlow<Boolean> = tvSettings.picture.backlightAdjustAllowedFlow
 
     fun processIntent(intent: MainIntent) {
         when (intent) {
             is MainIntent.ToggleDarkMode -> darkModePreferences.toggleMode()
             is MainIntent.EnableDarkModeAndToggleFilter -> enableDarkModeAndToggleFilter()
-            is MainIntent.ToggleScreenPower -> tvSettingsRepository.toggleScreenPower()
+            is MainIntent.ToggleScreenPower -> tvSettings.toggleScreenPower()
             is MainIntent.CaptureScreenshot -> captureScreenshot()
             is MainIntent.GrantPermissions -> grantPermissions(intent.permissions)
             is MainIntent.ChangeBacklight -> setBacklight(intent.value)
@@ -79,7 +79,7 @@ class MainViewModel(
     }
 
     private fun setBacklight(value: Int) {
-        tvSettingsRepository.getPictureSettings().backlight = value
+        tvSettings.picture.backlight = value
         if (darkModePreferences.currentMode == DarkModeManager.Mode.OFF) {
             darkModePreferences.dayBacklight = value
         }
@@ -98,7 +98,7 @@ class MainViewModel(
     private fun captureScreenshot() {
         captureScreenJob?.cancel()
         captureScreenJob = viewModelScope.launch {
-            if (!tvSettingsRepository.isAdbEnabled()) {
+            if (!tvSettings.isAdbEnabled()) {
                 _sideEffectChannel.send(MainSideEffect.ShowAdbRequired)
                 return@launch
             }
@@ -140,10 +140,10 @@ class MainViewModel(
             darkModeHintProvider: DarkModeHintProvider,
             adbClient: AdbClient,
             captureScreen: CaptureScreenUseCase,
-            tvSettingsRepository: TvSettingsRepository
+            tvSettings: TvSettings
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T = MainViewModel(
-                darkModePreferences, darkModeHintProvider, adbClient, captureScreen, tvSettingsRepository
+                darkModePreferences, darkModeHintProvider, adbClient, captureScreen, tvSettings
             ) as T
         }
     }

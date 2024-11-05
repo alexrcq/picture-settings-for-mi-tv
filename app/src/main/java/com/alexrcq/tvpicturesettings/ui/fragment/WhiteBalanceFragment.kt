@@ -9,18 +9,18 @@ import com.alexrcq.tvpicturesettings.storage.PreferencesKeys
 import com.alexrcq.tvpicturesettings.R
 import com.alexrcq.tvpicturesettings.service.WhiteBalanceLocker
 import com.alexrcq.tvpicturesettings.storage.PicturePreferences
-import com.alexrcq.tvpicturesettings.storage.TvSettings
+import com.alexrcq.tvpicturesettings.storage.PictureSettings
 import com.alexrcq.tvpicturesettings.util.onClick
 
 class WhiteBalanceFragment : GlobalSettingsFragment(R.xml.white_balance_prefs) {
 
-    private lateinit var pictureSettings: TvSettings.Picture
+    private lateinit var pictureSettings: PictureSettings
     private lateinit var picturePreferences: PicturePreferences
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val application = (requireActivity().application as App)
-        pictureSettings = application.tvSettingsRepository.getPictureSettings()
+        pictureSettings = application.tvSettings.picture
         picturePreferences = application.picturePreferences
         findPreference<Preference>(PreferencesKeys.RESET_VALUES)?.onClick {
             pictureSettings.resetWhiteBalance()

@@ -12,6 +12,7 @@
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <uses-feature
         android:name="android.software.leanback"
@@ -37,16 +38,6 @@
             android:name=".service.WhiteBalanceLocker"
             android:enabled="true"
             android:exported="false" />
-        <service
-            android:name="com.alexrcq.tvpicturesettings.service.ScreenFilterService"
-            android:exported="true"
-            android:label="@string/screen_filter_service"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-        </service>
-
         <receiver
             android:name="com.alexrcq.tvpicturesettings.receiver.AlarmBroadcastReceiver"
             android:exported="true">
