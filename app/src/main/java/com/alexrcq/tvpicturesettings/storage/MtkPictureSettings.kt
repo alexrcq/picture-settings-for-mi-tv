@@ -11,15 +11,15 @@ import android.os.Looper
 import com.alexrcq.tvpicturesettings.App.Companion.applicationScope
 import com.alexrcq.tvpicturesettings.util.TvUtils.isLocalDimmingSupported
 import com.alexrcq.tvpicturesettings.util.TvUtils.isOled
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
-
-private const val DEFAULT_COLOR_GAIN = 1024
-private const val ACTION_NOTIFY_DOLBY_VISION =
-    "com.android.tv.settings.partnercustomizer.tvsettingservice.NOTIFY_DOLBY_VISION"
 
 open class MtkPictureSettings(context: Context, private val global: GlobalSettings) : PictureSettings {
 
@@ -49,34 +49,42 @@ open class MtkPictureSettings(context: Context, private val global: GlobalSettin
             setTemperatureByMode(pictureMode)
         }
 
-    override val backlightAdjustAllowedFlow: StateFlow<Boolean> = callbackFlow {
-        fun updateBacklightAdjustAllowed(isDolbyVision: Boolean, isAutoBacklight: Boolean) {
-            trySend(!(isAutoBacklight || (isDolbyVision && !isLocalDimmingSupported() && !isOled(context))))
-        }
-        var isDolbyVision = false
-        val dolbyVisionReceiver = object : BroadcastReceiver() {
+    private val isDolbyVisionFlow: Flow<Boolean> = callbackFlow {
+        val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 if (intent.action == ACTION_NOTIFY_DOLBY_VISION) {
-                    isDolbyVision = intent.getBooleanExtra("DOLBY", false)
-                    updateBacklightAdjustAllowed(isDolbyVision, isAutoBacklightEnabled)
+                    val isDolbyVision = intent.getBooleanExtra("DOLBY", false)
+                    trySend(isDolbyVision)
                 }
             }
         }
-        val autoBacklightObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        send(false)
+        context.registerReceiver(receiver, IntentFilter(ACTION_NOTIFY_DOLBY_VISION))
+        awaitClose {
+            context.unregisterReceiver(receiver)
+        }
+    }
+
+    private val isAutoBacklightFlow: Flow<Boolean> = callbackFlow {
+        val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean, uri: Uri?) {
                 if (uri?.lastPathSegment == MtkGlobalKeys.PICTURE_AUTO_BACKLIGHT) {
-                    updateBacklightAdjustAllowed(isDolbyVision, isAutoBacklightEnabled)
+                    trySend(isAutoBacklightEnabled)
                 }
             }
         }
-        updateBacklightAdjustAllowed(isDolbyVision, isAutoBacklightEnabled)
-        context.registerReceiver(dolbyVisionReceiver, IntentFilter(ACTION_NOTIFY_DOLBY_VISION))
-        global.registerContentObserver(autoBacklightObserver)
+        send(isAutoBacklightEnabled)
+        global.registerContentObserver(observer)
         awaitClose {
-            context.unregisterReceiver(dolbyVisionReceiver)
-            global.unregisterContentObserver(autoBacklightObserver)
+            global.unregisterContentObserver(observer)
         }
-    }.stateIn(applicationScope, SharingStarted.Eagerly, false)
+    }
+
+    override val backlightAdjustAllowedFlow: StateFlow<Boolean> =
+        combine(isAutoBacklightFlow, isDolbyVisionFlow) { isAutoBacklight, isDolbyVision ->
+            !(isAutoBacklight || (isDolbyVision && !isLocalDimmingSupported() && !isOled(context)))
+        }.flowOn(Dispatchers.IO)
+            .stateIn(applicationScope, SharingStarted.Eagerly, !global.getBoolean(MtkGlobalKeys.PICTURE_AUTO_BACKLIGHT))
 
     override fun setWhiteBalance(redGain: Int, greenGain: Int, blueGain: Int) = with(global) {
         putInt(MtkGlobalKeys.PICTURE_RED_GAIN, redGain)
@@ -108,6 +116,10 @@ open class MtkPictureSettings(context: Context, private val global: GlobalSettin
     }
 
     companion object {
+        private const val DEFAULT_COLOR_GAIN = 1024
+        private const val ACTION_NOTIFY_DOLBY_VISION =
+            "com.android.tv.settings.partnercustomizer.tvsettingservice.NOTIFY_DOLBY_VISION"
+
         const val PICTURE_MODE_DEFAULT = 7
         const val PICTURE_MODE_BRIGHT = 3
         const val PICTURE_MODE_SPORT = 2
