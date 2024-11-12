@@ -8,9 +8,15 @@ import kotlin.reflect.KProperty
 
 interface GlobalSettings {
     fun putInt(key: String, value: Int)
+
     fun getInt(key: String): Int
+
     fun getInt(key: String, defValue: Int): Int
+
+    fun getBoolean(key: String): Boolean = getInt(key).toBoolean()
+
     fun registerContentObserver(observer: ContentObserver)
+
     fun unregisterContentObserver(observer: ContentObserver)
 
     fun intSetting(key: String) = object : ReadWriteProperty<Any?, Int> {
