@@ -84,7 +84,11 @@ open class MtkPictureSettings(context: Context, private val global: GlobalSettin
         combine(isAutoBacklightFlow, isDolbyVisionFlow) { isAutoBacklight, isDolbyVision ->
             !(isAutoBacklight || (isDolbyVision && !isLocalDimmingSupported() && !isOled(context)))
         }.flowOn(Dispatchers.IO)
-            .stateIn(applicationScope, SharingStarted.Eagerly, !global.getBoolean(MtkGlobalKeys.PICTURE_AUTO_BACKLIGHT))
+            .stateIn(
+                applicationScope,
+                SharingStarted.Eagerly,
+                initialValue = !global.getBoolean(MtkGlobalKeys.PICTURE_AUTO_BACKLIGHT, false)
+            )
 
     override fun setWhiteBalance(redGain: Int, greenGain: Int, blueGain: Int) = with(global) {
         putInt(MtkGlobalKeys.PICTURE_RED_GAIN, redGain)
