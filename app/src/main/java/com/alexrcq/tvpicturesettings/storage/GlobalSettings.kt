@@ -13,7 +13,11 @@ interface GlobalSettings {
 
     fun getInt(key: String, defValue: Int): Int
 
+    fun putBoolean(key: String, value: Boolean) = putInt(key, value.toInt())
+
     fun getBoolean(key: String): Boolean = getInt(key).toBoolean()
+
+    fun getBoolean(key: String, defValue: Boolean): Boolean = getInt(key, defValue.toInt()).toBoolean()
 
     fun registerContentObserver(observer: ContentObserver)
 
@@ -26,8 +30,8 @@ interface GlobalSettings {
     }
 
     fun booleanSetting(key: String) = object : ReadWriteProperty<Any?, Boolean> {
-        override fun getValue(thisRef: Any?, property: KProperty<*>): Boolean = getInt(key, 0).toBoolean()
+        override fun getValue(thisRef: Any?, property: KProperty<*>): Boolean = getBoolean(key, false)
 
-        override fun setValue(thisRef: Any?, property: KProperty<*>, value: Boolean): Unit = putInt(key, value.toInt())
+        override fun setValue(thisRef: Any?, property: KProperty<*>, value: Boolean): Unit = putBoolean(key, value)
     }
 }
